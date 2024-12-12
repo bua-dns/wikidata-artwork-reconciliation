@@ -11,6 +11,9 @@ export default defineConfig({
     vueDevTools(),
   ],
   base: '/vue-deployment/',
+  build: {
+    outDir: 'docs', // Change output directory to docs
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
