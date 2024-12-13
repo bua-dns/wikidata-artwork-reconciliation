@@ -45,6 +45,10 @@ function getRelatedValue(prop, resourceId) {
   }
   return relatedItem[prop][0]['@value'];
 }
+
+function getDBLink(id) {
+  return `https://omeka-s-t1.berlin-university-collections.de/admin/item/${id}`;
+}
 </script>
 
 <template>
@@ -56,13 +60,15 @@ function getRelatedValue(prop, resourceId) {
     <div v-else-if="error">{{ error }}</div>
     <div v-else>
       <div v-for="item in items" :key="item.id" class="item">
-        <h3>{{ item.label }}</h3>
+        <h3>{{ item.label }} <a :href="getDBLink(item.id)" target="_blank" rel="noopener">
+                  <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
+                </a></h3>
         <div v-for="prop in Object.keys(item).filter(key => key.startsWith('provenance:'))" 
           :key="prop"
           class="provenance-property"  
         >
           <strong>{{ item[prop][0]['property_label'] }}</strong>: 
-          <div class="value-listing"
+          <div class="value value-listing "
             v-for="(value, index) in item[prop]"
             :key="index"
           >
@@ -71,6 +77,10 @@ function getRelatedValue(prop, resourceId) {
             </template>
             <template v-if="value.type === 'resource'">
               {{ getRelatedValue(prop, value['value_resource_id']) }}
+              
+                <a :href="getDBLink(value['value_resource_id'])" target="_blank" rel="noopener">
+                  <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
+                </a>
             </template>
           </div> 
         </div>
@@ -82,6 +92,13 @@ function getRelatedValue(prop, resourceId) {
 </template>
 
 <style scoped>
+.icon {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}
 h2 {
   margin-bottom: 0.5rem;
 }
@@ -94,6 +111,10 @@ h2 {
 }
 .value-listing {
   margin-left: 1rem;
+}
+.value {
+  display: flex;
+  align-items: center;
 }
 </style>
 
