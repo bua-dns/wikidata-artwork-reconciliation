@@ -19,22 +19,50 @@ const items = computed(() => {
         mappedItem['related'] = getRelatedInformationUnits(item['o:id']);
         return mappedItem;
     })
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 function getRelatedInformationUnits(id) {
-  return itemsData.value
+  let relatedItems = itemsData.value
     .filter(item => item['o:resource_template']['o:id'] === 7)
     .filter(item => item['pro:relatesToCulturalAsset'][0]['value_resource_id'] === id)
     .map(item => {
       let mappedItem = {};
       mappedItem['id'] = item['o:id'];
+      mappedItem['dbLInk'] = getDBLink(item['o:id']);
+      mappedItem['infoSourceDate'] = item['pro:infoSourceDate'][0]['@value'];
       mappedItem['label'] = item['o:title'];
       const provenanceProps = Object.keys(item).filter(key => key.startsWith('pro:'));
-      provenanceProps.forEach(prop => {
-        mappedItem[prop] = item[prop];
-      });
+      mappedItem['claims'] = provenanceProps
+        .filter(prop => prop.startsWith('pro:ca'))
+        .map(prop => {
+          return {
+            label: item[prop][0]['property_label'],
+            value: item[prop][0]['@value'],
+          };
+        });
       return mappedItem;
-    });
+    })
+    .sort((a, b) => a.infoSourceDate.localeCompare(b.infoSourceDate));
+  let claims = {};
+  for (let item of relatedItems) {
+    for (let claim of item.claims) {
+      if (!claims[claim.label]) {
+        claims[claim.label] = [];
+      }
+      claims[claim.label].push({
+        value: claim.value,
+        infoSourceDate: item.infoSourceDate,
+        dbLink: item.dbLInk,
+      }) ;
+    }
+  }
+  for (let claim in claims) {
+    claims[claim].sort((a, b) => a.infoSourceDate.localeCompare(b.infoSourceDate));
+  }
+
+  return claims
+  // return relatedItems;
 }
 
 onMounted(async () => {
@@ -69,46 +97,81 @@ function getDBLink(id) {
 
 <template>
   <main>
-    <h1>Provenienzforschung zur Sammlung Sultan</h1>
-    <h2>Data Inspector</h2>
-    <pre v-if="true">{{ items }}</pre>
+    <div class="display">
+      <div class="headings content-element">
+        <h1>Provenienzforschung zur Sammlung Sultan</h1>
+        <h2>Data Inspector</h2>
+      </div>
+    </div>
+    <div class="display">
+      <div v-if="loading">Loading...</div>
+      <div v-else-if="error">{{ error }}</div>
+      <div v-else>
+        <div v-for="item in items" :key="item.id" class="item content-element">
+          <h3>{{ item.label }} <a :href="getDBLink(item.id)" target="_blank" rel="noopener">
+              <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
+            </a>
+          </h3>
+          <div class="content">
+            {{ item }}
+          </div>
+        </div>
+      </div>
     <div>
-    <!-- <div v-if="loading">Loading...</div>
-    <div v-else-if="error">{{ error }}</div>
-    <div v-else>
-      <div v-for="item in items" :key="item.id" class="item">
-        <h3>{{ item.label }} <a :href="getDBLink(item.id)" target="_blank" rel="noopener">
-                  <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
-                </a></h3>
-        <div v-for="prop in Object.keys(item).filter(key => key.startsWith('provenance:'))" 
-          :key="prop"
-          class="provenance-property"  
-        >
-          <strong>{{ item[prop][0]['property_label'] }}</strong>: 
-          <div class="value value-listing "
-            v-for="(value, index) in item[prop]"
-            :key="index"
-          >
-            <template v-if="value.type === 'literal'">
-              {{ value['@value'] }}
-            </template>
-            <template v-if="value.type === 'resource'">
-              {{ getRelatedValue(prop, value['value_resource_id']) }}
-              
+        <!-- <div v-if="loading">Loading...</div>
+        <div v-else-if="error">{{ error }}</div>
+        <div v-else>
+          <div v-for="item in items" :key="item.id" class="item">
+            <h3>{{ item.label }} <a :href="getDBLink(item.id)" target="_blank" rel="noopener">
+              <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
+            </a></h3>
+            <div v-for="prop in Object.keys(item).filter(key => key.startsWith('provenance:'))" 
+              :key="prop"
+              class="provenance-property"  
+              >
+              <strong>{{ item[prop][0]['property_label'] }}</strong>: 
+              <div class="value value-listing "
+              v-for="(value, index) in item[prop]"
+              :key="index"
+              >
+              <template v-if="value.type === 'literal'">
+                {{ value['@value'] }}
+              </template>
+              <template v-if="value.type === 'resource'">
+                {{ getRelatedValue(prop, value['value_resource_id']) }}
+                
                 <a :href="getDBLink(value['value_resource_id'])" target="_blank" rel="noopener">
                   <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
                 </a>
-            </template>
-          </div> 
+              </template>
+            </div> 
+          </div>
+          <pre v-if="false">{{ item }}</pre>
         </div>
-        <pre v-if="false">{{ item }}</pre>
-      </div>
-    </div> -->
+      </div> -->
+
+
     </div>
-  </main>
+  </div>
+  <div class="data-output" v-if="true">
+    <pre>{{ items }}</pre>
+  </div>
+</main>
 </template>
 
 <style scoped>
+.content-element {
+  padding: 1rem;
+  background-color: #fff;
+}
+.display {
+  margin-top: 2rem;
+}
+.data-output {
+  margin-top: 2rem;
+  background-color: #fff;
+  padding: 1rem;
+}
 .icon {
   display: inline-block;
   width: 1rem;
