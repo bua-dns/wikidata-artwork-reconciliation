@@ -7,19 +7,35 @@ const error = ref(null);
 
 const items = computed(() => {
   return itemsData.value
-  .filter(item => item['o:resource_class']['o:id'] === 32)
+  .filter(item => item['o:resource_template']['o:id'] === 6 )
    .map(item => {
         let mappedItem = {};
         mappedItem['id'] = item['o:id'];
         mappedItem['label'] = item['o:title'];
-        const provenanceProps = Object.keys(item).filter(key => key.startsWith('provenance:'));
+        const provenanceProps = Object.keys(item).filter(key => key.startsWith('pro:'));
         provenanceProps.forEach(prop => {
           mappedItem[prop] = item[prop];
         });
+        mappedItem['related'] = getRelatedInformationUnits(item['o:id']);
         return mappedItem;
     })
 });
 
+function getRelatedInformationUnits(id) {
+  return itemsData.value
+    .filter(item => item['o:resource_template']['o:id'] === 7)
+    .filter(item => item['pro:relatesToCulturalAsset'][0]['value_resource_id'] === id)
+    .map(item => {
+      let mappedItem = {};
+      mappedItem['id'] = item['o:id'];
+      mappedItem['label'] = item['o:title'];
+      const provenanceProps = Object.keys(item).filter(key => key.startsWith('pro:'));
+      provenanceProps.forEach(prop => {
+        mappedItem[prop] = item[prop];
+      });
+      return mappedItem;
+    });
+}
 
 onMounted(async () => {
   try {
@@ -55,8 +71,9 @@ function getDBLink(id) {
   <main>
     <h1>Provenienzforschung zur Sammlung Sultan</h1>
     <h2>Data Inspector</h2>
+    <pre v-if="true">{{ items }}</pre>
     <div>
-    <div v-if="loading">Loading...</div>
+    <!-- <div v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else>
       <div v-for="item in items" :key="item.id" class="item">
@@ -86,7 +103,7 @@ function getDBLink(id) {
         </div>
         <pre v-if="false">{{ item }}</pre>
       </div>
-    </div>
+    </div> -->
     </div>
   </main>
 </template>
