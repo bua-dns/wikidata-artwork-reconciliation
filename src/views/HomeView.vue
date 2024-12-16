@@ -5,6 +5,10 @@ const itemsData = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
+const shortcuts = {
+  'culturalAssets': 'https://omeka-s-t1.berlin-university-collections.de/admin/item?sort_order=desc&resource_template_id%5B%5D=6&numeric%5Bts%5D%5Bgte%5D%5Bpid%5D=&numeric%5Bts%5D%5Bgte%5D%5Bval%5D=&year=&month=&day=&hour=&minute=&second=&offset=&numeric%5Bts%5D%5Blte%5D%5Bpid%5D=&numeric%5Bts%5D%5Blte%5D%5Bval%5D=&year=&month=&day=&hour=&minute=&second=&offset=&numeric%5Bdur%5D%5Bgt%5D%5Bpid%5D=&numeric%5Bdur%5D%5Bgt%5D%5Bval%5D=&years=&months=&days=&hours=&minutes=&seconds=&numeric%5Bdur%5D%5Blt%5D%5Bpid%5D=&numeric%5Bdur%5D%5Blt%5D%5Bval%5D=&years=&months=&days=&hours=&minutes=&seconds=&numeric%5Bivl%5D%5Bpid%5D=&numeric%5Bivl%5D%5Bval%5D=&year=&month=&day=&hour=&minute=&second=&offset=&numeric%5Bint%5D%5Bgt%5D%5Bpid%5D=&numeric%5Bint%5D%5Bgt%5D%5Bval%5D=&integer=&numeric%5Bint%5D%5Blt%5D%5Bpid%5D=&numeric%5Bint%5D%5Blt%5D%5Bval%5D=&integer=',
+}
+
 const items = computed(() => {
   return itemsData.value
   .filter(item => item['o:resource_template']['o:id'] === 6 )
@@ -155,7 +159,19 @@ function selectItem(id) {
     currentInput.value = ''; // Clear the input
   }
 }
-
+function getIllustrations(id) {
+  let illustrations = itemsData.value
+    .filter(item => item['o:resource_template']['o:id'] === 9)
+    .filter(item => item['pro:relatesToCulturalAsset'][0]['value_resource_id'] === id)
+    .map(item => {
+      return {
+        'label': item['dcterms:title'][0]['@value'],
+        'dbLink': getDBLink(item['o:id']),
+        'url': item['thumbnail_display_urls']['large'],
+      }
+    });
+  return illustrations;
+}
 onMounted(async () => {
   try {
     const response = await fetch('https://omeka-s-t1.berlin-university-collections.de/api/items');
@@ -178,6 +194,9 @@ onMounted(async () => {
       <h2>Data Inspector</h2>
     </div>
     <div class="controls content-element">
+      <div class="shortcuts">
+        <a :href="shortcuts.culturalAssets" target="_blank" rel="noopener">Werke in der Datenbank<img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/></a>
+      </div>
       <div class="search-control">
         <input type="text" class="search" v-model="currentInput" 
           placeholder="Werk suchen..."
@@ -242,42 +261,25 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <pre v-if="false">{{ selectedItem.provenanceStations }}</pre>
-        </div>
-      </div>
-    <div>
-        <!-- <div v-if="loading">Loading...</div>
-        <div v-else-if="error">{{ error }}</div>
-        <div v-else>
-          <div v-for="item in items" :key="item.id" class="item">
-            <h3>{{ item.label }} <a :href="getDBLink(item.id)" target="_blank" rel="noopener">
-              <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
-            </a></h3>
-            <div v-for="prop in Object.keys(item).filter(key => key.startsWith('provenance:'))" 
-              :key="prop"
-              class="provenance-property"  
+          <div class="illustration" v-if="getIllustrations(selectItem.id)">
+            <h4>Bildquellen</h4>
+            <div class="thumbs">
+              <div class="thumb"
+                v-for="(illustration, index) in getIllustrations(selectedItem.id)"
+                :key="`thumb-${index}`"
               >
-              <strong>{{ item[prop][0]['property_label'] }}</strong>: 
-              <div class="value value-listing "
-              v-for="(value, index) in item[prop]"
-              :key="index"
-              >
-              <template v-if="value.type === 'literal'">
-                {{ value['@value'] }}
-              </template>
-              <template v-if="value.type === 'resource'">
-                {{ getRelatedValue(prop, value['value_resource_id']) }}
-                
-                <a :href="getDBLink(value['value_resource_id'])" target="_blank" rel="noopener">
+                <img :src="illustration.url" alt="Illustration" />
+                <a :href="illustration.dbLink" target="_blank" rel="noopener">
                   <img src="@/assets/icons/edit.svg" alt="Edit" class="icon edit-icon"/>
                 </a>
-              </template>
-            </div> 
+              </div>
+            </div>
+            <pre v-if="false">
+              
+              {{ getIllustrations(selectedItem.id) }}</pre>
           </div>
-          <pre v-if="false">{{ item }}</pre>
         </div>
-      </div> -->
-    </div>
+      </div>
   </div>
   <div class="data-output" v-if="false">
     <pre>{{ items }}</pre>
@@ -286,8 +288,17 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+a {
+  color: #0078d4;
+  text-decoration: none;
+}
 .controls {
   position: relative;
+}
+.shortcuts {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
 }
 .suggestions {
   position: absolute;
@@ -321,7 +332,9 @@ onMounted(async () => {
 
 .content-element {
   padding: 1rem;
+  margin-bottom: 0.75rem;
   background-color: #fff;
+  border-radius: 0.5rem;
 }
 .display {
   display: block;
@@ -371,6 +384,9 @@ h4 {
   display: flex;
   align-items: center;
   margin-left: 1rem;
+}
+.thumb {
+  margin-bottom: 1rem;
 }
 </style>
 
