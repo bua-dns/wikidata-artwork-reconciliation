@@ -10,7 +10,7 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
-  base: '/vue-deployment/',
+  base: '/wikidata-artwork-reconciliation/',
   build: {
     outDir: 'docs', // Change output directory to docs
   },
