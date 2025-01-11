@@ -49,7 +49,11 @@ async function submitSearch() {
     }
   }
 } 
-
+function clearSearch() {
+  currentInput.value = '';
+  itemsData.value = [];
+  error.value = null;
+}
 </script>
 
 <template>
@@ -65,40 +69,40 @@ async function submitSearch() {
         />
         <button @click="submitSearch()" v-if="currentInput.length">Submit</button>
         <img src="@/assets/icons/x-circle.svg" alt="Edit" class="icon close-icon"
-          @click="currentInput = ''"
+          @click="clearSearch()"
           v-if="currentInput"
         />
       </div>
     </div>
-    <div class="display content-element">
-      <div v-if="loading">Loading...</div>
-      <div v-else-if="error">{{ error }}</div>
+    <div class="display">
+      <div v-if="loading" class="content-element">Loading...</div>
+      <div v-else-if="error" class="content-element">{{ error }}</div>
       <div v-else>
-        <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Label</th>
-          <th>Type</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(item, index) in itemsData" :key="index">
-          <td>
-            <a :href="item.artwork" target="_blank">{{ item.artworkLabel }}</a></td>
-          <td>{{ item.artworkTypeLabel }}</td>
-          <td class="image-cell">
-            <img
-              v-if="item.image"
-              :src="item.image"
-              :alt="item.artworkLabel"
-            />
-            <span v-else>No Image</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="table-container content-element" v-if="itemsData.length">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Type</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in itemsData" :key="index">
+              <td>
+                <a :href="item.artwork" target="_blank">{{ item.artworkLabel }}</a></td>
+              <td>{{ item.artworkTypeLabel }}</td>
+              <td class="image-cell">
+                <img
+                  v-if="item.image"
+                  :src="item.image"
+                  :alt="item.artworkLabel"
+                />
+                <span v-else>No Image</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
   </div>
       </div>
   </div>
