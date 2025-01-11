@@ -102,7 +102,7 @@ async function submitSearch() {
   </div>
       </div>
   </div>
-  <div class="data-output" v-if="true">
+  <div class="data-output" v-if="false">
     <h3>Raw Data</h3>
     <pre>{{ rawData }}</pre>
     <pre>{{ itemsData }}</pre>
